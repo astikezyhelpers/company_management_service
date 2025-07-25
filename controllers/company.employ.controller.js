@@ -91,12 +91,10 @@ export const getCompanyEmployeeByIdController = async (req, res) => {
 }
 export const updateCompanyEmployeeController = async (req, res) => {
     const { companyId, employeeId } = req.params;
-    const {employ_id,role,status} = req.body;
+   
     try {
-        const companyEmployData = {
-            role:role,
-            status:status,
-        };
+      
+        const companyEmployData = req.body;
         const companyEmploy = await updateCompanyEmployee(companyId,employeeId,companyEmployData);
         if(!companyEmploy){
             res.status(400).json({

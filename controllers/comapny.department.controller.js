@@ -8,13 +8,8 @@ import {
 from "../services/company.department.services.js";
 export const createCompanyDepartmentController = async (req, res) => {
     const { companyId } = req.params;
-    const {name,code,is_active} = req.body;
-    const companyDepartmentData = {
-        company_id:companyId,
-        name:name,
-        code:code,
-        is_active:is_active
-    };
+    const companyDepartmentData = req.body;
+  
     try {
         const companyDepartment = await createCompanyDepartment(companyDepartmentData);
         if(!companyDepartment){

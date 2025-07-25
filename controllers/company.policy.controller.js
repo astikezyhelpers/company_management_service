@@ -7,13 +7,8 @@ import {
  } from "../services/company.policies.services.js";
 export const createCompanyPolicyController = async (req, res) => {
     const { companyId } = req.params;
-    const  {policy_type,name,is_active} = req.body;
-    const companyPolicyData = {
-        company_id:companyId,      
-        policy_type:policy_type,
-        name:name,
-        is_active:is_active
-    };
+  
+    const companyPolicyData = req.body;
     try {
         const companyPolicy = await createCompanyPolicies(companyPolicyData);
         if(!companyPolicy){

@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-company_management_service/
+**company_management_service/
 ├── app.js
 ├── server.js
 ├── package.json
@@ -28,7 +28,7 @@ company_management_service/
 │   └── company.department.router.js
 ├── utils/
 ├── middleware/
-└── README.md
+└── README.md**
 
 ## Implemented Features
 

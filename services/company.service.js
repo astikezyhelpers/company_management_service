@@ -16,11 +16,25 @@ export const getCompanyById = async (id) => {
   return company;
 };
 
-export const updateCompany = async (id, companyData) => {
+export const updateCompany = async (id, updateData) => {
+  // First check if company exists
+  const existingCompany = await prisma.company.findUnique({
+    where: { id },
+  });
+
+  if (!existingCompany) {
+    return null;
+  }
+
+  // Update only the provided fields
   const company = await prisma.company.update({
     where: { id },
-    data: companyData,
+    data: {
+      ...updateData,
+      updated_at: new Date(), // Auto-update timestamp
+    },
   });
+  
   return company;
 };
 export const deleteCompany = async (id) => {

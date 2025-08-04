@@ -6,7 +6,7 @@ import {
     updateCompanyDepartmentController,
     deleteCompanyDepartmentController
 } 
-from "../controllers/comapny.department.controller.js";
+from "../controllers/company.department.controller.js";
 const routerCompanyDepartment = express.Router();
 routerCompanyDepartment.post("/create/:companyId", createCompanyDepartmentController);
 routerCompanyDepartment.get("/get/:companyId", getCompanyDepartmentController);

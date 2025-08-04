@@ -11,21 +11,27 @@ export const createCompanyDepartmentController = async (req, res) => {
     const companyDepartmentData = req.body;
   
     try {
-        const companyDepartment = await createCompanyDepartment(companyDepartmentData);
+        // Add company_id to the department data
+        const departmentDataWithCompanyId = {
+            ...companyDepartmentData,
+            company_id: companyId
+        };
+        
+        const companyDepartment = await createCompanyDepartment(departmentDataWithCompanyId);
         if(!companyDepartment){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "Company department not created",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Company department created successfully",
             companyDepartment,
         });
     }catch (error) {
         console.log(error.message);
-        res.status(500).json({
+        return res.status(500).json({
             success: false, 
             message: "Company department not created",
             error: error.message,
@@ -37,19 +43,19 @@ export const getCompanyDepartmentController = async (req, res) => {
     try {
         const companyDepartment = await getCompanyDepartment(companyId);
         if(!companyDepartment){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "Company department not found",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Company department fetched successfully",
             companyDepartment,
         });
     }catch (error) {
         console.log(error.message); 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Company department not fetched",
             error: error.message,
@@ -61,19 +67,19 @@ export const getCompanyDepartmentByIdController = async (req, res) => {
     try {
         const companyDepartment = await getCompanyDepartmentById(companyId, departmentId);
         if(!companyDepartment){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "Company department not found",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Company department fetched successfully",
             companyDepartment,
         });
     }catch (error) {
         console.log(error.message);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Company department not fetched",
             error: error.message,
@@ -86,19 +92,19 @@ export const updateCompanyDepartmentController = async (req, res) => {
     try {
         const companyDepartment = await updateCompanyDepartment(companyId, departmentId, req.body);
         if(!companyDepartment){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "Company department not updated",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Company department updated successfully",
             companyDepartment,
         });
     }catch (error) {
         console.log(error.message);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Company department not updated",
             error: error.message,
@@ -110,19 +116,19 @@ export const deleteCompanyDepartmentController = async (req, res) => {
     try {
         const companyDepartment = await deleteCompanyDepartment(companyId, departmentId);
         if(!companyDepartment){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "Company department not deleted",
             });
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true, 
             message: "Company department deleted successfully",
             companyDepartment,
         });
     }catch (error) {
         console.log(error.message);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Company department not deleted",
             error: error.message,

@@ -25,13 +25,29 @@ export const getCompanyPolicyById = async (companyId,policyId) => {
     return companyPolicy;
 };
 export const updateCompanyPolicy = async (companyId,policyId,companyPolicyData) => {
+    // First check if policy exists
+    const existingPolicy = await prisma.companyPolicy.findFirst({
+        where: {
+            company_id: companyId,
+            id: policyId
+        }
+    });
+
+    if (!existingPolicy) {
+        return null;
+    }
+
+    // Update only the provided fields and auto-update timestamp
     const companyPolicy = await prisma.companyPolicy.update({
         where: {
                 company_id:companyId,
                 id:policyId
             },
         
-        data:companyPolicyData
+        data: {
+            ...companyPolicyData,
+            updated_at: new Date(), // Auto-update timestamp
+        }
     });
     return companyPolicy;
 };

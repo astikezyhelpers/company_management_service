@@ -25,16 +25,35 @@ export const getCompanyEmployeeById = async (companyId,employeeId) => {
     });
     return companyEmploy;
 }; 
-export const updateCompanyEmployee = async (companyId,employeeId,companyEmployData) => {
+export const updateCompanyEmployee = async (companyId, employeeId, updateData) => {
+    // First check if employee exists
+    const existingEmployee = await prisma.companyEmployee.findUnique({
+        where: {
+            company_id_employee_id: {
+                company_id: companyId,
+                employee_id: employeeId
+            }
+        }
+    });
+
+    if (!existingEmployee) {
+        return null;
+    }
+
+    // Update only the provided fields
     const companyEmploy = await prisma.companyEmployee.update({
         where: {
-            company_id_employee_id:{
-                company_id:companyId,
-                employee_id:employeeId
+            company_id_employee_id: {
+                company_id: companyId,
+                employee_id: employeeId
             }
         },
-        data:companyEmployData,
+        data: {
+            ...updateData,
+            updated_at: new Date(), // Auto-update timestamp
+        },
     });
+    
     return companyEmploy;
 };
 export const deleteCompanyEmployee = async (companyId,employeeId) => {

@@ -6,7 +6,7 @@ import {
     deleteCompanyPolicy
 } from "../services/company.policies.services.js";
 import { AppError } from "../utils/Apperror.js";
-
+import logger from "../logger.js"; 
 // Create Policy
 export const createCompanyPolicyController = async (req, res, next) => {
     try {

@@ -7,6 +7,7 @@ import {
   deleteCompanyDepartment
 } from "../services/company.department.services.js";
 import { AppError } from "../utils/Apperror.js";
+import logger from "../logger.js"; 
 
 export const createCompanyDepartmentController = async (req, res, next) => {
   const { companyId } = req.params;

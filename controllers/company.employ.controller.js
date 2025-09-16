@@ -6,6 +6,7 @@ import {
   deleteCompanyEmployee
 } from "../services/company.employ.services.js";
 import { AppError } from "../utils/Apperror.js";
+import logger from "../logger.js"; 
 
 export const createCompanyEmployController = async (req, res, next) => {
   const { companyId } = req.params;

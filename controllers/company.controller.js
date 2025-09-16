@@ -1,5 +1,6 @@
 import { createCompany, getCompany, getCompanyById, updateCompany, deleteCompany } from "../services/company.service.js";
 import { AppError } from "../utils/Apperror.js";
+import logger from "../logger.js"; 
 
 // Create Company
 export const createCompanyController = async (req, res, next) => {

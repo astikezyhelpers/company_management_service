@@ -1,7 +1,11 @@
+import dotenv from "dotenv";
+import logger from "./logger.js";
+dotenv.config();
 import app from "./app.js";
-app.listen(process.env.PORT, (err) => {
-  console.log(`Server is running on port http://localhost:${process.env.PORT}/api/company`);
+let PORT = process.env.PORT;
+app.listen(PORT, (err) => {
+  logger.info(`Server is running on port http://localhost:${PORT}/api/company`);
   if (err) {
-    console.log(err.message);
+    logger.error(err.message);
   }
 });

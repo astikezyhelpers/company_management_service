@@ -43,8 +43,7 @@ export const updateCompanyDepartment = async (companyId,departmentId,companyDepa
     // Update only the provided fields and auto-update timestamp
     const companyDepartment = await prisma.department.update({
         where: {
-            company_id:companyId,
-            id:departmentId
+            id: departmentId
         },
         data: {
             ...companyDepartmentData,
@@ -56,8 +55,7 @@ export const updateCompanyDepartment = async (companyId,departmentId,companyDepa
 export const deleteCompanyDepartment = async (companyId,departmentId) => { 
     const companyDepartment = await prisma.department.delete({
         where: {
-            company_id:companyId,
-            id:departmentId
+            id: departmentId
         }
     });
     return companyDepartment;

@@ -40,7 +40,6 @@ export const updateCompanyPolicy = async (companyId,policyId,companyPolicyData) 
     // Update only the provided fields and auto-update timestamp
     const companyPolicy = await prisma.companyPolicy.update({
         where: {
-                company_id:companyId,
                 id:policyId
             },
         
@@ -54,7 +53,6 @@ export const updateCompanyPolicy = async (companyId,policyId,companyPolicyData) 
 export const deleteCompanyPolicy = async (companyId,policyId) => {
     const companyPolicy = await prisma.companyPolicy.delete({
         where: {
-            company_id:companyId,
             id:policyId
         }
     });

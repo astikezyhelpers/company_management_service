@@ -4,129 +4,141 @@ import {
     getCompanyPolicyById,
     updateCompanyPolicy,
     deleteCompanyPolicy
- } from "../services/company.policies.services.js";
-export const createCompanyPolicyController = async (req, res) => {
-    const { companyId } = req.params;
-  
-    const companyPolicyData = req.body;
+} from "../services/company.policies.services.js";
+import { AppError } from "../utils/Apperror.js";
+import logger from "../logger.js"; 
+// Create Policy
+export const createCompanyPolicyController = async (req, res, next) => {
     try {
-        const companyPolicy = await createCompanyPolicies(companyPolicyData);
-        if(!companyPolicy){
-            return res.status(400).json({
-                success: false,
-                message: "Company policy not created",
-            });
+        const { companyId } = req.params;
+        const companyPolicyData = req.body;
+
+        if (!companyId) {
+            throw new AppError(400,"Company ID is required");
         }
-        return res.status(200).json({
+        if (!companyPolicyData || Object.keys(companyPolicyData).length === 0) {
+            throw new AppError(400,"Policy data is required");
+        }
+
+        const companyPolicy = await createCompanyPolicies({
+            ...companyPolicyData,
+            company_id: companyId
+        });
+
+        if (!companyPolicy) {
+            throw new AppError(400,"Company policy not created");
+        }
+
+        res.status(201).json({
             success: true,
             message: "Company policy created successfully",
             companyPolicy,
         });
-    }catch (error) {
-        console.log(error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Company policy not created",
-            error: error.message,   
-        });
+    } catch (error) {
+        next(error);
     }
-}
-export const getCompanyPolicyController = async (req, res) => {
-    const { companyId } = req.params;
+};
+
+// Get All Policies by Company
+export const getCompanyPolicyController = async (req, res, next) => {
     try {
+        const { companyId } = req.params;
+
+        if (!companyId) {
+            throw new AppError(400,"Company ID is required");
+        }
+
         const companyPolicy = await getCompanyPolicies(companyId);
-        if(!companyPolicy){
-            return res.status(400).json({
-                success: false,
-                message: "Company policy not found",
-            });
+
+        if (!companyPolicy || companyPolicy.length === 0) {
+            throw new AppError(404,"No policies found for this company");
         }
-        return res.status(200).json({  
+
+        res.status(200).json({
             success: true,
-            message: "Company policy fetched successfully",
+            message: "Company policies fetched successfully",
             companyPolicy,
         });
-    }catch (error) {
-        console.log(error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Company policy not fetched",
-            error: error.message,
-        });
+    } catch (error) {
+        next(error);
     }
-    
-}
-export const getCompanyPolicyByIdController = async (req, res) => {
-    const { companyId, policyId } = req.params;
+};
+
+// Get Single Policy by ID
+export const getCompanyPolicyByIdController = async (req, res, next) => {
     try {
+        const { companyId, policyId } = req.params;
+
+        if (!companyId || !policyId) {
+            throw new AppError(400,"Company ID and Policy ID are required");
+        }
+
         const companyPolicy = await getCompanyPolicyById(companyId, policyId);
-        if(!companyPolicy){
-            return res.status(400).json({
-                success: false,
-                message: "Company policy not found",
-            });
+
+        if (!companyPolicy) {
+            throw new AppError(404,"Company policy not found");
         }
-        return res.status(200).json({
+
+        res.status(200).json({
             success: true,
             message: "Company policy fetched successfully",
             companyPolicy,
         });
-    }catch (error) {
-        console.log(error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Company policy not fetched",
-            error: error.message,
-        });
+    } catch (error) {
+        next(error);
     }
-}
-export const updateCompanyPolicyController = async (req, res) => {
-    const { companyId, policyId } = req.params;
-  
+};
+
+// Update Policy
+export const updateCompanyPolicyController = async (req, res, next) => {
     try {
-        const companyPolicy = await updateCompanyPolicy(companyId, policyId,req.body);
-        if(!companyPolicy){
-            return res.status(400).json({
-                success: false,
-                message: "Company policy not updated",
-            });
+        const { companyId, policyId } = req.params;
+        const updateData = req.body;
+
+        if (!companyId || !policyId) {
+            throw new AppError(400,"Company ID and Policy ID are required");
         }
-        return res.status(200).json({  
+        if (!updateData || Object.keys(updateData).length === 0) {
+            throw new AppError(400,"No update data provided");
+        }
+
+        const companyPolicy = await updateCompanyPolicy(companyId, policyId, updateData);
+
+        if (!companyPolicy) {
+            throw new AppError(404,"Company policy not found");
+        }
+
+        res.status(200).json({
             success: true,
             message: "Company policy updated successfully",
             companyPolicy,
         });
-    }catch (error) {
-        console.log(error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Company policy not updated",
-            error: error.message,
-        });
+    } catch (error) {
+        next(error);
     }
-}
+};
 
-export const deleteCompanyPolicyController = async (req, res) => {
-    const { companyId, policyId } = req.params;
+// Delete Policy
+export const deleteCompanyPolicyController = async (req, res, next) => {
     try {
-        const companyPolicy = await deleteCompanyPolicy(companyId, policyId);
-        if(!companyPolicy){
-            return res.status(400).json({
-                success: false,
-                message: "Company policy not deleted",
-            });
+        const { companyId, policyId } = req.params;
+
+        if (!companyId || !policyId) {
+            throw new AppError(400,"Company ID and Policy ID are required");
         }
-        return res.status(200).json({
-            success: true,  
+
+        const companyPolicy = await deleteCompanyPolicy(companyId, policyId);
+
+        if (!companyPolicy) {
+            throw new AppError(404,"Company policy not found");
+        }
+
+        res.status(200).json({
+            success: true,
             message: "Company policy deleted successfully",
             companyPolicy,
         });
-    }catch (error) {
-        console.log(error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Company policy not deleted",
-            error: error.message,
-        });
+    } catch (error) {
+        next(error);
     }
-}
+};

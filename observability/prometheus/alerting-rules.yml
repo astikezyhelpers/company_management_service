@@ -1,0 +1,29 @@
+groups:
+  - name: golden-signals
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(http_request_errors_total[5m])) / sum(rate(http_request_duration_seconds_count[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: High HTTP 5xx error rate
+          description: Error rate > 5% for 10m
+
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: p95 latency high
+          description: p95 latency exceeds 500ms
+
+      - alert: InstanceDown
+        expr: up{job="company-service"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Service down
+          description: Prometheus target is down for 5 minutes

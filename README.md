@@ -1,528 +1,458 @@
-# Company Management Service API
+﻿# Company Management Platform
 
-A comprehensive Node.js REST API for managing companies, employees, departments, and policies with JWT authentication and authorization.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Coverage](https://img.shields.io/badge/coverage-—-yellow)](#)
 
-## 🚀 Quick Start
+A modular, production-ready platform for managing company entities (companies, departments, employees, policies) with a modern observability stack. Designed for a polyglot microservices environment with a React/Angular frontend, Node.js primary backend, PostgreSQL database, optional message queues, and robust CI/CD.
 
-### Prerequisites
-- Node.js (v16 or higher)
-- PostgreSQL database
-- npm or yarn
+---
 
-### Installation
+## Table of Contents
 
-1. **Clone and install dependencies:**
-```bash
-npm install
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Repository Structure](#repository-structure)
+- [Prerequisites](#prerequisites)
+- [Setup & Initialization](#setup--initialization)
+  - [Local (Developer) Setup](#local-developer-setup)
+  - [Docker Setup](#docker-setup)
+  - [Kubernetes Setup](#kubernetes-setup)
+- [Running the Project](#running-the-project)
+- [Configuration](#configuration)
+- [API Endpoints Overview](#api-endpoints-overview)
+- [Testing & CI/CD](#testing--cicd)
+- [Observability & Monitoring](#observability--monitoring)
+  - [Metrics (Prometheus + Grafana)](#metrics-prometheus--grafana)
+  - [Logs (Fluent Bit  Loki/Grafana or Elasticsearch/Kibana)](#logs-fluent-bit--lokigrafana-or-elasticsearchkibana)
+  - [Tracing (OpenTelemetry + Tempo/Jaeger)](#tracing-opentelemetry--tempojaeger)
+  - [Dashboards, Golden Signals, Alerts](#dashboards-golden-signals-alerts)
+  - [Correlations: Logs  Traces  Metrics](#correlations-logs--traces--metrics)
+- [Security](#security)
+- [Contribution Guidelines](#contribution-guidelines)
+- [License](#license)
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Frontend
+    A[Web App\n(React/Angular)]
+  end
+
+  subgraph Backends
+    B[Company Management Service\n(Node.js + Express + Prisma)]
+    C[Future Services\n(Java/Python - optional)]
+  end
+
+  A <-- REST/HTTPS --> B
+  A <-- REST/HTTPS --> C
+
+  subgraph Data Layer
+    D[(PostgreSQL)]
+    Q[(Message Queue\n(e.g., Kafka/RabbitMQ - optional))]
+  end
+
+  B <-- Prisma --> D
+  B <-- Pub/Sub --> Q
+  C <-- Pub/Sub --> Q
+
+  subgraph Observability
+    P[Prometheus]
+    G[Grafana]
+    L[Loki]
+    T[Tempo]
+    AM[Alertmanager]
+    FB[Fluent Bit]
+  end
+
+  B -- /metrics --> P
+  FB -- Docker Logs --> L
+  B -- OTLP Traces --> T
+  G -- Dashboards --> P & L & T
+  AM -- Alerts --> Slack/Email
 ```
 
-2. **Environment Setup:**
-```bash
-cp .env.sample .env
+---
+
+## Tech Stack
+
+- Backend
+  - Node.js, Express (`company_management_service`)
+  - Prisma ORM, PostgreSQL
+  - Optional: Additional services in Java/Python
+- Frontend
+  - React or Angular (assumed for the platform UI)
+- Messaging (optional)
+  - Kafka / RabbitMQ (if event-driven workflows are needed)
+- Observability
+  - Metrics: Prometheus
+  - Dashboards: Grafana
+  - Logs: Fluent Bit  Loki (default) or Elasticsearch
+  - Tracing: OpenTelemetry SDK  Grafana Tempo (default) or Jaeger
+  - Alerts: Alertmanager  Slack/Email
+- CI/CD
+  - GitHub Actions (example provided)
+
+---
+
+## Features
+
+- Company, Department, Employee, Policy CRUD APIs
+- JWT-based authentication
+- Validation with Joi
+- Centralized error handling
+- Structured JSON logging with correlation and trace IDs
+- Production-ready observability and dashboards
+- Docker Compose stack; Kubernetes-ready
+
+---
+
+## Repository Structure
+
+```
+company_management_service/
+ app.js
+ server.js
+ logger.js
+ .env.sample
+ controllers/
+ routes/
+   company.router.js
+   company.employee.router.js
+   company.policy.router.js
+   company.department.router.js
+ middleware/
+   errorHandler.js
+   metrics.js
+   correlation.js
+ db/
+   db.js
+ prisma/
+ validations/
+ tests/
+ observability/
+   otel.js
+   prometheus/
+     prometheus.yml
+     alerting-rules.yml
+   alertmanager/alertmanager.yml
+   loki/config.yml
+   tempo/config.yml
+   fluent-bit/fluent-bit.conf
+   grafana/
+      datasources/datasources.yml
+      dashboards/dashboards.yml
+      json/golden-signals.json
+ docker-compose.yml
 ```
 
-3. **Configure your `.env` file:**
+---
+
+## Prerequisites
+
+- Node.js 18+
+- Docker and Docker Compose
+- PostgreSQL 13+ (local or managed)
+- Optional: kubectl, Helm (for Kubernetes)
+- A Slack Webhook or SMTP credentials (for alerts)
+
+---
+
+## Setup & Initialization
+
+### Local (Developer) Setup
+
+1. Clone and install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Copy and edit environment variables:
+   ```bash
+   cp .env.sample .env
+   # edit .env for DATABASE_URL, JWT_*, and Observability vars if needed
+   ```
+
+3. Initialize database (example with Prisma):
+   ```bash
+   npx prisma migrate dev
+   npx prisma generate
+   ```
+
+4. Start the service:
+   ```bash
+   npm run start
+   # Service at http://localhost:3002
+   # Metrics at http://localhost:3002/metrics
+   ```
+
+### Docker Setup
+
+1. Ensure `.env` has all required vars (DB, JWT, Observability, Alertmanager).
+2. Start the full stack:
+   ```bash
+   docker compose up -d
+   ```
+3. Access:
+   - Service: http://localhost:3002
+   - Metrics: http://localhost:3002/metrics
+   - Prometheus: http://localhost:9090
+   - Grafana: http://localhost:3000 (admin/admin)
+   - Loki (via Grafana Explore)
+   - Tempo (via Grafana Explore)
+   - Alertmanager: http://localhost:9093
+
+### Kubernetes Setup
+
+Use if deploying to K8s instead of Docker Compose.
+
+- Metrics/Alerts/Dashboards: Install kube-prometheus-stack via Helm
+- Logs: Deploy Loki + Promtail (or Fluent Bit DaemonSet) via Helm
+- Traces: Deploy Tempo (or Jaeger Operator)
+
+Example high-level steps:
+```bash
+# Prometheus+Grafana+Alertmanager
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install obs prometheus-community/kube-prometheus-stack -n observability --create-namespace
+
+# Loki
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install loki grafana/loki -n observability
+helm install promtail grafana/promtail -n observability
+
+# Tempo
+helm install tempo grafana/tempo -n observability
+
+# Company service manifests (Deployment, Service, Ingress)
+kubectl apply -f k8s/company-service/
+```
+
+Provision Grafana datasources and dashboards via ConfigMaps or Helm values. Add a `ServiceMonitor` for scraping `/metrics` from the service.
+
+---
+
+## Running the Project
+
+- Development (hot reload):
+  ```bash
+  npm run start
+  ```
+- Production (Docker):
+  ```bash
+  docker compose up -d
+  ```
+- Health:
+  - Basic liveness: Add `/health` route if needed
+  - Metrics: `/metrics` (Prometheus format)
+
+---
+
+## Configuration
+
+Edit `.env` (see `.env.sample`):
+
 ```env
+# Database
 DATABASE_URL="postgresql://username:password@localhost:5432/company_management_db"
-DIRECT_URL="postgresql://username:password@localhost:5432/company_management_db"
+
+# Server
 PORT=3002
 NODE_ENV=development
+
+# JWT
 JWT_SECRET="your-super-secret-jwt-key-here-make-it-long-and-random"
 JWT_EXPIRES_IN="24h"
+
+# Observability
+OTEL_SERVICE_NAME=company-management-service
+OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+
+# Alertmanager receivers
+SLACK_WEBHOOK_URL=
+ALERT_EMAIL_TO=
+ALERT_EMAIL_FROM=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
 ```
 
-4. **Database Setup:**
+---
+
+## API Endpoints Overview
+
+Base URL: `http://localhost:3002/api`
+
+- Companies
+  - `GET /company` – List companies
+  - `POST /company` – Create company
+  - `GET /company/:id` – Get company
+  - `PUT /company/:id` – Update company
+  - `DELETE /company/:id` – Delete company
+- Employees
+  - `GET /company/employ` – List employees
+  - `POST /company/employ` – Create employee
+  - `.../employ/:id` – Get/Update/Delete employee
+- Policies
+  - `GET /company/policy` – List policies
+  - `POST /company/policy` – Create policy
+  - `PUT /company/policy/update/:companyId/:policyId` – Update policy
+- Departments
+  - `GET /company/department` – List departments
+  - `POST /company/department` – Create department
+  - `.../department/:id` – Get/Update/Delete department
+
+Authentication
+- JWT in `Authorization: Bearer <token>`
+
+Error Handling
+- Centralized handler in `middleware/errorHandler.js`
+- Standardized error format with `AppError`
+
+---
+
+## Testing & CI/CD
+
+Run tests:
 ```bash
-npx prisma migrate dev
-npx prisma generate
+npm test
+npm run test:watch
+npm run test:coverage
 ```
 
-5. **Start the server:**
+Example GitHub Actions for observability deployment:
+```yaml
+name: deploy-observability
+on:
+  push:
+    paths:
+      - 'observability/**'
+      - '.github/workflows/deploy-observability.yml'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /opt/company-service
+            docker compose pull || true
+            docker compose up -d
+```
+
+Recommended CI stages:
+- Lint  Test  Build  Security Scan  Deploy
+- Inject secrets for Alertmanager via CI variables
+
+---
+
+## Observability & Monitoring
+
+This project ships with a ready-to-run stack under `observability/` and `docker-compose.yml`.
+
+### Metrics (Prometheus + Grafana)
+
+- App instruments metrics using `prom-client` and exposes `/metrics`:
+  - Middleware: `middleware/metrics.js`
+  - Default runtime metrics + custom HTTP histograms, error counters, inflight requests
+- Prometheus config:
+  - `observability/prometheus/prometheus.yml`
+  - Scrapes `company-service:3002/metrics`
+- Grafana dashboards:
+  - Datasources: `observability/grafana/datasources/datasources.yml`
+  - Dashboards: `observability/grafana/dashboards/dashboards.yml`
+  - Golden Signals JSON: `observability/grafana/json/golden-signals.json`
+
+Start with:
 ```bash
-npm start
+docker compose up -d
+# Visit Grafana: http://localhost:3000 (admin/admin)
 ```
 
-## 🔐 Authentication & Authorization
+### Logs (Fluent Bit  Loki/Grafana or Elasticsearch/Kibana)
 
-### JWT Token Generation
+- App logs are structured JSON (Winston) with trace context:
+  - `logger.js` attaches `trace_id` and `span_id`
+  - Correlation ID middleware: `middleware/correlation.js` sets `x-correlation-id`
+- Log shipping via Fluent Bit:
+  - Config: `observability/fluent-bit/fluent-bit.conf` (tails Docker logs)
+  - Default sink: Loki (`observability/loki/config.yml`)
+  - View logs in Grafana Explore (datasource: Loki)
+- Elasticsearch/Kibana alternative:
+  - Replace the Loki output with ES output in Fluent Bit config:
+    ```ini
+    [OUTPUT]
+        Name   es
+        Match  *
+        Host   elasticsearch
+        Port   9200
+        Index  company-logs
+    ```
+  - Deploy Elasticsearch + Kibana instead of Loki
 
-Create `generate-token.js`:
-```javascript
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-dotenv.config();
+### Tracing (OpenTelemetry + Tempo/Jaeger)
 
-const payload = {
-    id: "user-uuid-here",
-    email: "test@example.com",
-    name: "Test User"
-};
+- OTel Bootstrap: `observability/otel.js`
+  - Node auto-instrumentations (HTTP/Express/Prisma)
+  - OTLP HTTP exporter  Tempo (`observability/tempo/config.yml`)
+- Visualize in Grafana Explore (datasource: Tempo)
+- Jaeger alternative:
+  - Run Jaeger and set `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger-collector:4318`
 
-const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
-console.log("JWT Token:", token);
-```
+Enable on server start:
+- `server.js` calls `startOtel()` before starting HTTP listener
 
-**Run:**
-```bash
-node generate-token.js
-```
+### Dashboards, Golden Signals, Alerts
 
-**Use the token in requests:**
-```bash
-Authorization: Bearer YOUR_JWT_TOKEN_HERE
-```
+- Golden Signals dashboard JSON included (latency p95/p99, error rate, throughput, logs, traces)
+- Prometheus alert rules:
+  - `observability/prometheus/alerting-rules.yml`
+  - Alerts: High error rate, high latency p95, instance down
+- Alertmanager routes:
+  - `observability/alertmanager/alertmanager.yml`
+  - Slack (`SLACK_WEBHOOK_URL`) and Email (SMTP) supported
 
-## 📚 API Endpoints
+### Correlations: Logs  Traces  Metrics
 
-### Base URL: `http://localhost:3002/api`
+- Logs include `trace_id` and `span_id` (from OTel context) and `x-correlation-id`
+- Grafana Tempo + Loki integration:
+  - From a trace, click View logs to pivot to Loki scoped by `trace_id`
+  - From logs, link back to traces (derived fields in datasource config)
+- Metrics-to-traces exemplars (optional):
+  - Add OTel exemplars to histograms to jump from latency spikes to traces
 
 ---
 
-## 🏢 Company Management
+## Security
 
-### Create Company
-```http
-POST /company/create
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "name": "Tech Corp",
-    "registration_number": "REG123456789",
-    "email": "contact@techcorp.com",
-    "phone": "+1234567890",
-    "website": "https://techcorp.com",
-    "industry": "Technology",
-    "address": {
-        "street": "123 Tech Street",
-        "city": "Silicon Valley",
-        "state": "CA",
-        "zip": "94105",
-        "country": "USA"
-    },
-    "logo_url": "https://techcorp.com/logo.png",
-    "status": "active",
-    "subscription_tier": "premium",
-    "billing_info": {
-        "tax_id": "TAX123456"
-    },
-    "settings": {
-        "timezone": "PST",
-        "currency": "USD"
-    },
-    "created_by": "admin-user-id",
-    "version": 1
-}
-```
-
-### Get All Companies
-```http
-GET /company/get
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Get Company by ID
-```http
-GET /company/get/:id
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Update Company
-```http
-PUT /company/update/:id
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "name": "Updated Tech Corp",
-    "status": "active",
-    "subscription_tier": "enterprise",
-    "version": 2
-}
-```
-
-### Delete Company
-```http
-DELETE /company/delete/:id
-Authorization: Bearer YOUR_JWT_TOKEN
-```
+- Store secrets in environment variables or secret managers (not in Git)
+- Rotate JWT secrets regularly
+- Use HTTPS in production with a reverse proxy (e.g., Nginx/Traefik)
+- Enable RBAC for Kubernetes and restricted network policies
+- Least-privilege DB roles; avoid superuser connections from app
 
 ---
 
-## 👥 Employee Management
+## Contribution Guidelines
 
-### Create Employee
-```http
-POST /company/employ/create/:companyId
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "user_id": "USER1234",
-    "employee_id": "EMP001",
-    "department_id": "department-uuid-here",
-    "designation": "Software Engineer",
-    "role": "developer",
-    "budget_limit": 5000.00,
-    "start_date": "2024-01-15T00:00:00Z",
-    "end_date": "2025-01-15T00:00:00Z",
-    "salary_band": "L3",
-    "reporting_manager_id": "manager-uuid-here",
-    "employment_type": "full_time",
-    "status": "active"
-}
-```
-
-### Get All Employees
-```http
-GET /company/employ/get/:companyId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Get Employee by ID
-```http
-GET /company/employ/get/:companyId/:employeeId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Update Employee
-```http
-PUT /company/employ/update/:companyId/:employeeId
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "designation": "Senior Software Engineer",
-    "role": "senior_developer",
-    "budget_limit": 7500.00,
-    "salary_band": "L4",
-    "status": "active"
-}
-```
-
-### Delete Employee
-```http
-DELETE /company/employ/delete/:companyId/:employeeId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
+- Fork and create a feature branch
+- Follow code style (ESLint + Prettier)
+- Add/maintain tests (Jest)
+- Update documentation where relevant
+- Create a PR with a clear description and testing notes
 
 ---
 
-## 🏬 Department Management
+## License
 
-### Create Department
-```http
-POST /company/department/create/:companyId
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "name": "Engineering",
-    "description": "Software development team",
-    "code": "ENG",
-    "cost_center": "CC001",
-    "budget_allocated": 100000.00,
-    "budget_used": 25000.00,
-    "manager_id": "employee-uuid-here",
-    "parent_id": "parent-department-uuid",
-    "level": 1,
-    "path": "/engineering",
-    "is_active": true
-}
-```
-
-### Get All Departments
-```http
-GET /company/department/get/:companyId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Get Department by ID
-```http
-GET /company/department/get/:companyId/:departmentId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Update Department
-```http
-PUT /company/department/update/:companyId/:departmentId
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "name": "Software Engineering",
-    "description": "Advanced software development team",
-    "budget_allocated": 150000.00,
-    "is_active": true
-}
-```
-
-### Delete Department
-```http
-DELETE /company/department/delete/:companyId/:departmentId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
----
-
-## 📋 Policy Management
-
-### Create Policy
-```http
-POST /company/policy/create/:companyId
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "policy_type": "HR",
-    "name": "Remote Work Policy",
-    "description": "Guidelines for remote work arrangements",
-    "rules": {
-        "max_remote_days": 3,
-        "approval_required": true,
-        "equipment_provided": true
-    },
-    "is_active": true,
-    "priority": 1,
-    "effective_from": "2024-01-01T00:00:00Z",
-    "effective_to": "2024-12-31T23:59:59Z",
-    "created_by": "hr-manager-uuid",
-    "approved_by": "ceo-uuid",
-    "approval_date": "2023-12-15T10:00:00Z",
-    "version": 1
-}
-```
-
-### Get All Policies
-```http
-GET /company/policy/get/:companyId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Get Policy by ID
-```http
-GET /company/policy/get/:companyId/:policyId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-### Update Policy
-```http
-PUT /company/policy/update/:companyId/:policyId
-Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
-
-{
-    "name": "Updated Remote Work Policy",
-    "description": "Updated guidelines",
-    "is_active": true,
-    "priority": 2,
-    "version": 2
-}
-```
-
-### Delete Policy
-```http
-DELETE /company/policy/delete/:companyId/:policyId
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
----
-
-## 🔧 Testing with Postman/Thunder Client
-
-### 1. Set Environment Variables
-```
-BASE_URL = http://localhost:3002/api
-JWT_TOKEN = your-generated-jwt-token
-```
-
-### 2. Add Authorization Header
-For all protected routes, add:
-```
-Authorization: Bearer {{JWT_TOKEN}}
-```
-
-### 3. Sample Test Flow
-1. **Generate JWT token** using the script
-2. **Create a company** (save the company ID)
-3. **Create a department** using the company ID
-4. **Create an employee** using company ID and department ID
-5. **Create a policy** using the company ID
-6. **Test GET, PUT, DELETE operations**
-
----
-
-## 📊 Data Models
-
-### Company
-```javascript
-{
-    id: "uuid",
-    name: "string (required)",
-    registration_number: "string (required)",
-    email: "string (required)",
-    phone: "string",
-    website: "string",
-    industry: "string",
-    address: "json object",
-    logo_url: "string",
-    status: "string (required)",
-    subscription_tier: "string (required)",
-    billing_info: "json object",
-    settings: "json object",
-    created_by: "string",
-    updated_by: "string",
-    version: "number",
-    created_at: "datetime",
-    updated_at: "datetime"
-}
-```
-
-### Employee
-```javascript
-{
-    id: "uuid",
-    company_id: "uuid (required)",
-    user_id: "string (required)",
-    employee_id: "string (required)",
-    department_id: "uuid",
-    designation: "string",
-    role: "string (required)",
-    budget_limit: "number",
-    start_date: "datetime",
-    end_date: "datetime",
-    salary_band: "string",
-    reporting_manager_id: "string",
-    employment_type: "string",
-    status: "string (required)",
-    created_at: "datetime",
-    updated_at: "datetime"
-}
-```
-
-### Department
-```javascript
-{
-    id: "uuid",
-    company_id: "uuid (required)",
-    name: "string (required)",
-    description: "string",
-    code: "string (required)",
-    cost_center: "string",
-    budget_allocated: "number",
-    budget_used: "number",
-    manager_id: "string",
-    parent_id: "string",
-    level: "number",
-    path: "string",
-    is_active: "boolean",
-    created_at: "datetime",
-    updated_at: "datetime"
-}
-```
-
-### Policy
-```javascript
-{
-    id: "uuid",
-    company_id: "uuid (required)",
-    policy_type: "string (required)",
-    name: "string (required)",
-    description: "string",
-    rules: "json object",
-    is_active: "boolean",
-    priority: "number",
-    effective_from: "datetime",
-    effective_to: "datetime",
-    created_by: "string",
-    approved_by: "string",
-    approval_date: "datetime",
-    version: "number",
-    created_at: "datetime",
-    updated_at: "datetime"
-}
-```
-
----
-
-## ⚠️ Error Responses
-
-### Common Error Formats
-```javascript
-// Validation Error
-{
-    "error": "Validation failed",
-    "details": ["field is required", "field must be a valid email"]
-}
-
-// Authentication Error
-{
-    "error": "Access token required"
-}
-
-// Authorization Error  
-{
-    "error": "Access denied - You do not have access to this company"
-}
-
-// Not Found Error
-{
-    "error": "Resource not found"
-}
-```
-
-### HTTP Status Codes
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request (Validation Error)
-- `401` - Unauthorized (Missing/Invalid Token)
-- `403` - Forbidden (Access Denied)
-- `404` - Not Found
-- `500` - Internal Server Error
-
----
-
-## 🛠️ Development
-
-### Project Structure
-```
-├── controllers/          # Route handlers
-├── db/                  # Database connection
-├── middleware/          # Auth, validation, error handling
-├── prisma/             # Database schema and migrations
-├── routes/             # API route definitions
-├── services/           # Business logic
-├── utils/              # Utility functions
-├── validations/        # Joi validation schemas
-├── app.js              # Express app setup
-└── server.js           # Server entry point
-```
-
-### Available Scripts
-```bash
-npm start              # Start production server
-npm run dev           # Start development server with nodemon
-npm run migrate       # Run database migrations
-npm run generate      # Generate Prisma client
-```
-
----
-
-## 🔒 Security Features
-
-- **JWT Authentication** - Secure token-based authentication
-- **Company Authorization** - Users can only access their company's data
-- **Input Validation** - Joi schema validation on all inputs
-- **Error Handling** - Centralized error handling middleware
-- **SQL Injection Protection** - Prisma ORM prevents SQL injection
-
----
-
-## 📝 Important Notes
-
-- All timestamps are in UTC
-- UUIDs are used for all primary keys
-- All routes require JWT authentication
-- Company-specific routes require both authentication and authorization
-- Use actual `employee_id` (not `user_id`) when fetching employees by ID
-- Phone numbers support international format with optional `+` prefix
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

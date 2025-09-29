@@ -1,0 +1,58 @@
+{
+    "title": "Company Service - Golden Signals",
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Error Rate (5m)",
+        "targets": [
+          {
+            "expr": "sum(rate(http_request_errors_total[5m])) / sum(rate(http_request_duration_seconds_count[5m]))",
+            "format": "time_series",
+            "legendFormat": "error_rate"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "Latency p95/p99",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "Throughput (RPS)",
+        "targets": [
+          {
+            "expr": "sum(rate(http_request_duration_seconds_count[1m]))",
+            "legendFormat": "rps"
+          }
+        ]
+      },
+      {
+        "type": "logs",
+        "title": "Logs (correlated)",
+        "datasource": "Loki",
+        "targets": [
+          {
+            "expr": "{service=\"company-management-service\"}"
+          }
+        ]
+      },
+      {
+        "type": "traces",
+        "title": "Traces",
+        "datasource": "Tempo"
+      }
+    ]
+  }
